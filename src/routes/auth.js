@@ -2,7 +2,6 @@ const {Router} = require('express');
 const {check, validationResult} = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const config = require('config');
 const userModel = require('../models/user');
 const router = Router();
 
@@ -34,7 +33,7 @@ router.post(
             const isUserAlreadyExists = !!await userModel.findOne({email});
 
             if (isUserAlreadyExists) {
-                res.status(400).json({message: 'Oops, a user with this email already exists in our service, check the entered data.'});
+                return res.status(400).json({message: 'Oops, a user with this email already exists in our service, check the entered data.'});
             }
 
             const passwordHash = await bcrypt.hash(password, 12);
@@ -44,8 +43,8 @@ router.post(
                 password: passwordHash,
                 registrationDate: Date.now(),
             });
-
             await user.save();
+            return res.status(200).json({message: 'User was created.'});
         } catch (e) {
             res.status(500).json({message: 'Some magic happened, please try again to perform the actions you have done, thank you.'});
         }
@@ -88,7 +87,7 @@ router.post(
                     .json({message: 'You entered the wrong password, please try again.'});
             }
 
-            const token = jwt.sign({userId: currentUser.id}, config.get('jwtSecret'));
+            const token = jwt.sign({userId: currentUser.id}, process.env.JWT_SECRET);
             currentUser.lastVisit = Date.now();
             await currentUser.save();
             res.json({token, record: {...currentUser, id: currentUser._id}});
@@ -109,7 +108,7 @@ router.get(
                 return res.status(401).json({message: 'You are not logged in, please login.'});
             }
 
-            const user = jwt.verify(token, config.get('jwtSecret'));
+            const user = jwt.verify(token, process.env.JWT_SECRET);
             const currentUser = await userModel.findOne({_id: user.userId});
 
             if (currentUser.status) {

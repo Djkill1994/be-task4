@@ -1,5 +1,5 @@
+require('dotenv').config();
 const express = require('express');
-const config = require('config');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const app = express();
@@ -9,11 +9,11 @@ app.use(express.json({extended: true}));
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/users', require('./src/routes/users'));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 const start = async () => {
     try {
-        await mongoose.connect(config.get('mongoUri'), {
+        await mongoose.connect(process.env.MONGO_URI, {
             useUnifiedTopology: true,
         });
         app.listen(PORT, () =>
